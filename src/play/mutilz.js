@@ -2,8 +2,12 @@ export const maybe = (max) => {
   return Math.random() < max;
 };
 
-export const rnd = (max) => {
-  return Math.random() * max;
+export const rndInt = (max) => {
+  return Math.floor(Math.random() * max);
+};
+
+export const between = (min, max) => {
+  return min + rndInt(max - min);
 };
 
 export const lerp = (value, target, factor = 0.1) =>{

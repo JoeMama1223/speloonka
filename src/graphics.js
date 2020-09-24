@@ -9,12 +9,36 @@ export default function Graphics(canvas, sprites) {
     ctx.fillStyle = color;
   };
 
+  this.strokeStyle = (color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+  };
+
   this.clear = () => {
     ctx.clearRect(0, 0, 320, 180);
   };
 
   this.fr = (x, y, w, h) => {
+    x = Math.floor(x - cameraX);
+    y = Math.floor(y - cameraY);
+    w = Math.floor(w);
+    h = Math.floor(h);
+    
     ctx.fillRect(x, y, w, h);
+  };
+
+  this.points = (points, xscale = 1, yscale = 1, baseY = 90) => {
+    if (points.length < 1) {
+      return;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(points[0][0] * xscale, baseY - points[0][1] * yscale);
+    for (let i = 1; i< points.length; i++) {
+      ctx.lineTo(points[i][0] * xscale, baseY - points[i][1] * yscale);
+    }
+    ctx.stroke();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   };
 
   this.camera = (x = 0, y = 0) => {

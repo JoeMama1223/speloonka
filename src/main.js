@@ -22,11 +22,13 @@ export function app(element, options) {
   let audio = new Audio();
   audio.generate(audioData);
 
-  new Assets(assetsBase + '/sprites.png')
+  new Assets(assetsBase, {
+    spelunky: '/spelunky.png'
+  })
     .start(sprites => {
 
       let graphics = new Graphics(canvas, 
-                                  sprites);
+                                  sprites.spelunky);
 
       let ctx = {
         g: graphics,
@@ -43,7 +45,7 @@ export function app(element, options) {
         events.update();
         play.update();
         play.draw();
-
+        
       }).start();
     });
 

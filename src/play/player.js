@@ -9,6 +9,18 @@ import {
   xFriction
 } from './phy';
 
+const JumpGraceTime = 4;
+const DuckFriction = 0.1;
+const MaxRun = 4;
+const RunReduce = 0.3;
+const RunAccel = 0.3;
+const Gravity = 3;
+const MaxFall = 4;
+const FastMaxAccel = 0.2;
+const JumpHBoost = 0.1;
+const JumpSpeed = -10;
+const LiftBoost = 0.3;
+
 export default function Player(play, ctx) {
 
   let { e, g, a } = ctx;
@@ -61,39 +73,21 @@ export default function Player(play, ctx) {
     wasGrounded = true;
   };
 
+  const fLiftBoost = () => {
+    
+    return [0,0];
+
+  };
+
   const killPlayer = () => {
     isDead = true;
     play.killPlayer(this);
   };
 
   this.update = () => {
-
     base.update();
 
-    if (p.y <= 16) {
-      if (p.x > 512 - 16) {
-        play.nextLevel(this);
-        return;
-      }
-    }
-
-    if (p.y >= 512 - 32) {
-      if (p.x < 0) {
-        play.prevLevel(this);
-        return;
-      }
-    }
-
     p.x = mu.clamp(p.x, 0, 512 - 16);
-
-    if (play.checkObject(this, types.Spike, 0, 0)) {
-      killPlayer();
-    }
-
-    if (p.y >= 512) {
-      killPlayer();
-      return;
-    }
 
     let inputY = 0,
         inputX = 0,
@@ -121,118 +115,47 @@ export default function Player(play, ctx) {
       jBuffer--;
     }
 
-    let _hAccel = inputX * hAccel;
-    p.dx += _hAccel;
-    p.dx += - p.dx * xFriction;
-
-    let wallDir = 0;
-
-    if (base.isSolid(-3, 0)) {
-      wallDir = -1;
-    } else if (base.isSolid(3, 0)) {
-      wallDir = 1;
-    }
-
-    let isGrounded = base.isSolid(0, 1);
-
-    let dieGround = base.isFlag(0, 1, 2);
-
-    if (!wasGrounded && dieGround) {
-      if (Math.abs(pdy) > v0Jump * 1.5 - 0.1) {
-        killPlayer();
+    let onGround = false;
+    if (p.dy >= 0) {
+      if (base.isSolid(0, 1)) {
+        onGround = true;
       }
     }
 
-    if (!isGrounded) {
-      p.ay = gFall;
+    let maxDx = MaxRun;
+    if (Math.abs(p.dx) > maxDx && Math.sign(p.dx) == inputX) {
+      p.dx = mu.appr(p.dx, maxDx * inputX, RunReduce);
+    } else {
+      p.dx = mu.appr(p.dx, maxDx * inputX, RunAccel);
     }
+    p.dx = mu.appr(p.dx, 0, DuckFriction);
 
-    if (isGrounded) {
-      jGrace = 12;
+    let maxFall = MaxFall;
+    let mf = MaxFall;
+    maxFall = mu.appr(maxFall, mf, FastMaxAccel);
+
+    let maxDy = maxFall;
+    p.dy = mu.appr(p.dy, maxDy, Gravity); 
+
+    if (onGround) {
+      jGrace = JumpGraceTime;
     } else if (jGrace > 0) {
       jGrace--;
     }
 
     if (jBuffer > 0) {
       if (jGrace > 0) {
-        p.ay = -gJump;
-        p.dy = -v0Jump;
-        jGrace = 0;
-        jBuffer = 0;
-        scalex = 0.6;
-        scaley = 1.4;
-        a.sfx(5);
-      } else {
-        if (!isGrounded && wallDir !== 0) {
-          p.dy = -v0Jump * 0.9;
-          p.dx = -wallDir * hAccel * 8;
-          jBuffer = 0;
-          a.sfx(5);
-        }
+      let liftBoost = fLiftBoost();
+      p.dx += JumpHBoost * inputX;
+      p.dy = JumpSpeed;
+      p.dx += liftBoost[0];
+      p.dy += liftBoost[1];
       }
     }
 
-    scalex = mu.appr(scalex, 1, 0.03);
-    scaley = mu.appr(scaley, 1, 0.03);
-
-    p.w = 16 * scalex;
-    p.h = 16 * scaley;
-
-    let vSlideDrag = 0;
-    if (inputX !== 0 && base.isSolid(inputX, 0)) {
-      if (Math.sign(p.dy) > 0) {
-        vSlideDrag = 1;
-      }
-    }
-
-    p.dy += p.ay;
-    p.dy += - p.dy * xFriction * 1.6 * vSlideDrag;
-
-
-    if (landingTimer > 0) {
-      landingTimer--;
-    } else if (isGrounded && !wasGrounded) {
-      landingTimer = 10;
-    }
-
-
-    if (Math.sign(pdx) != Math.sign(p.dx) ||
-        wasGrounded !== isGrounded) {
-      play.smoke(p.x, p.y + 8);
-    }
-
-    pdy = p.dy;
-    pdx = p.dx;
-    wasGrounded = isGrounded;
 
     cam.x = cam.x + (p.x - cam.x) * 0.1;
     cam.y = cam.y + (p.y - cam.y) * 0.1;
-
-    p.flipx = p.dx < -1 ? true:
-      p.dx > 1 ? false:
-      p.flipx;
-
-    if (landingTimer > 0) {
-      st = 12;
-      stOff = Math.floor((1.0 - landingTimer / 10) * 2);
-    } else if (!isGrounded) {
-      if (wallDir !== 0 && p.dy > 0) {
-        st = 9;
-        stOff = (stOff + 1/10)%3;
-      } else {
-        st = 6;
-        stOff = (stOff + 1/5)%3;
-      }
-    } else if (Math.abs(p.dx) > 0.1) {
-      st = 3;
-      stOff = (stOff + 1/ 4) % 3;
-    } else {
-      st = 0;
-      stOff = (stOff + 1/ 30) % 3;
-    }
-
-
-    p.si = Math.floor(st + stOff);
   };
 
 

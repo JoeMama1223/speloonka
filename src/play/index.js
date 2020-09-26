@@ -1,8 +1,6 @@
 import Ground from './ground';
 import Graph from './graph';
 
-
-
 export default function Play(ctx) {
 
   let { g, e, a } = ctx;

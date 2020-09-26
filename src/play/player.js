@@ -1,93 +1,45 @@
-import * as types from './types';
 import * as mu from './mutilz';
-import BaseObject from './object';
-
-import {
-  v0Jump,
-  gJump,
-  hAccel,
-  xFriction
-} from './phy';
-
-const JumpGraceTime = 4;
-const DuckFriction = 0.1;
-const MaxRun = 4;
-const RunReduce = 0.3;
-const RunAccel = 0.3;
-const Gravity = 3;
-const MaxFall = 4;
-const FastMaxAccel = 0.2;
-const JumpHBoost = 0.1;
-const JumpSpeed = -10;
-const LiftBoost = 0.3;
+import DMover from './dmover';
 
 export default function Player(play, ctx) {
 
-  let { e, g, a } = ctx;
+  let { g, e } = ctx;
 
+  let dm = new DMover();
   let cam = play.cam;
+  let mover = play.mover;
 
-  let base = this.base = new BaseObject(this, play, ctx);
-  let p = this.p = base.p;
+  let p = {
+    tX: 0,
+    tY: 0,
+    x: 0,
+    y: 0,
+    dx: 0,
+    dy: 0,
+    remx: 0,
+    remy: 0,
+    cbox: [-6,-6,12,12],
+    sw: 12,
+    sh: 12,
+    jBuffer: 0,
+    jGrace: 0,
+    stateX: dm.fStandX,
+    stateY: dm.fStandY,
+    onEdgeX: (p) => {
+      p.tX = 0;
+      p.stateX = dm.fStandX;
+    }
+  };
 
   let pJump;
-  let jBuffer;
+  let pChange;
 
-  let jGrace;
 
-  let wasGrounded;
-
-  let isDead;
-
-  let pdx,
-      pdy;
-
-  let landingTimer;
-
-  let st = 0;
-  let stOff = 0;
-
-  const gFall = -gJump;
-  
-  let scalex,
-      scaley;
-
-  this.init = (x, y) => {
-    base.init(x, y);
-
-    isDead = false;
-
-    scalex = 1;
-    scaley = 1;
-
-    landingTimer = 0;
-    jGrace = 0;
-    p.cbox = [2, 6, 10, 10];
-  };
-
-  this.canCollect = () => {
-    return !isDead && wasGrounded;
-  };
-
-  this.wasGrounded = () => {
-    wasGrounded = true;
-  };
-
-  const fLiftBoost = () => {
-    
-    return [0,0];
-
-  };
-
-  const killPlayer = () => {
-    isDead = true;
-    play.killPlayer(this);
+  this.init = () => {
   };
 
   this.update = () => {
-    base.update();
-
-    p.x = mu.clamp(p.x, 0, 512 - 16);
+    let inputC = 0;
 
     let inputY = 0,
         inputX = 0,
@@ -109,58 +61,66 @@ export default function Player(play, ctx) {
     }
     pJump = e.x;
 
+    if (e.c) {
+      inputC = true && !pChange;
+    }
+    pChange = e.c;
+
+    if (inputC) {
+      mutateParams();
+    }
+
     if (inputJ) {
-      jBuffer = 8;
-    } else if (jBuffer > 0) {
-      jBuffer--;
+      p.jBuffer = 8;
+    } else if (p.jBuffer > 0) {
+      p.jBuffer--;
     }
 
-    let onGround = false;
-    if (p.dy >= 0) {
-      if (base.isSolid(0, 1)) {
-        onGround = true;
-      }
+    p.inputX = inputX;
+    p.inputY = inputY;
+    p.inputJ = e.x;
+
+    p.onGround = 
+      mover.isSolid(p, 0, 1);
+
+    if (p.onGround) {
+      p.jGrace = 8;
+    } else if (p.jGrace > 0) {
+      p.jGrace--;
     }
 
-    let maxDx = MaxRun;
-    if (Math.abs(p.dx) > maxDx && Math.sign(p.dx) == inputX) {
-      p.dx = mu.appr(p.dx, maxDx * inputX, RunReduce);
-    } else {
-      p.dx = mu.appr(p.dx, maxDx * inputX, RunAccel);
-    }
-    p.dx = mu.appr(p.dx, 0, DuckFriction);
+    mover.clampX(p);
+    mover.moveX(p);
+    mover.moveY(p);
 
-    let maxFall = MaxFall;
-    let mf = MaxFall;
-    maxFall = mu.appr(maxFall, mf, FastMaxAccel);
+    p.stateX(p);
+    p.stateY(p);
 
-    let maxDy = maxFall;
-    p.dy = mu.appr(p.dy, maxDy, Gravity); 
+    p.sw = mu.lerp(p.sw, 12);
+    p.sh = mu.lerp(p.sh, 12);
 
-    if (onGround) {
-      jGrace = JumpGraceTime;
-    } else if (jGrace > 0) {
-      jGrace--;
-    }
-
-    if (jBuffer > 0) {
-      if (jGrace > 0) {
-      let liftBoost = fLiftBoost();
-      p.dx += JumpHBoost * inputX;
-      p.dy = JumpSpeed;
-      p.dx += liftBoost[0];
-      p.dy += liftBoost[1];
-      }
-    }
+    p.flipx = p.dx < 0 ? true : p.dx == 0 ? p.flipx : false;
 
 
-    cam.x = cam.x + (p.x - cam.x) * 0.1;
-    cam.y = cam.y + (p.y - cam.y) * 0.1;
+    cam.x = mu.lerp(cam.x, p.x);
+    cam.y = mu.lerp(cam.y, p.y);
+
+    
+
   };
 
+  const colorMap = [
+    '#29adff',
+    '#ff004d',
+    '#ff004d',
+    '#fff1e8',
+  ];
 
   this.draw = () => {
-    base.draw();
-  };
+    g.fill(colorMap[p.si]);
+    g.fr(p.x-p.sw/2,p.y-p.sh/2,p.sw,p.sh);
 
+    // g.sspr(p.si * 24,0,24,24,p.x-5,p.y-8,24,24,p.flipx);
+  };
+  
 }

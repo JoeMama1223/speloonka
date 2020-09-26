@@ -1,6 +1,17 @@
 let fs = require('fs');
 
-let nbLevels = 5;
+let nbLevels = 1;
+
+function transformData(data) {
+  
+  let res = [];
+  let grid = data.levels[0].layerInstances[0].intGrid;
+
+  grid.forEach(_ => {
+    res[_.coordId] = _.v;
+  });
+  return res;
+}
 
 function readLevel(level) {
   fs.readFile(`./assets/level${level}.json`, 'utf8', parseLevel(level));
@@ -25,15 +36,13 @@ function writeLevels() {
     template += `const level${i} = [${level}];\n`;
   });
 
-  template += `
-export default [
-level1,
-level2,
-level3,
-level4,
-level5
-];
-`;
+  template += `\nexport default [\n`;
+
+  levels.forEach((_, i) => {
+    template += `level${i},\n`;
+  });
+
+  template += `\n];\n`;
 
   writeFile('src/play/levels.js', template);
 }
@@ -47,7 +56,7 @@ function parseLevel(level) {
 
     let data = JSON.parse(contents);
 
-    levels[level] = data.layers[0].data;
+    levels[level] = transformData(data);
 
     checkWrite();
   };

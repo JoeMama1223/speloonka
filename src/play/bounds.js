@@ -1,0 +1,9 @@
+export const pxTileSize = 8;
+export const nbTilesX = 40 * 4;
+export const nbTilesY = 32 * 4;
+export const pxWorldSizeX = pxTileSize * nbTilesX;
+export const pxWorldSizeY = pxTileSize * nbTilesY;
+export const pxScreenSizeX = 320;
+export const pxScreenSizeY = 180;
+export const nbTilesInScreenX = pxScreenSizeX / pxTileSize;
+export const nbTilesInScreenY = pxScreenSizeY / pxTileSize;

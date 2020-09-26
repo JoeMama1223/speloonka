@@ -9,9 +9,9 @@ export default function Graphics(canvas, sprites) {
     ctx.fillStyle = color;
   };
 
-  this.strokeStyle = (color) => {
+  this.strokeStyle = (color, lw) => {
     ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
+    ctx.lineWidth = lw;
   };
 
   this.clear = () => {
@@ -25,6 +25,15 @@ export default function Graphics(canvas, sprites) {
     h = Math.floor(h);
     
     ctx.fillRect(x, y, w, h);
+  };
+
+  this.strokeRect = (x, y, w, h) => {
+    x = Math.floor(x - cameraX);
+    y = Math.floor(y - cameraY);
+    w = Math.floor(w);
+    h = Math.floor(h);
+    
+    ctx.strokeRect(x, y, w, h);
   };
 
   this.points = (points, xscale = 1, yscale = 1, baseY = 90) => {

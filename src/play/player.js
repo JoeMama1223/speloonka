@@ -25,9 +25,19 @@ export default function Player(play, ctx) {
     jGrace: 0,
     stateX: dm.fStandX,
     stateY: dm.fStandY,
-    onEdgeX: (p) => {
+    onEdgeX: (p, bx) => {
+      {
+        p.tX = 0;
+        p.stateX = dm.fStandX;
+        p.x = bx;
+      }
+    },
+    onEdgeY: (p, by) => {
+      let trans = play.checkEdge(mover.absCbox(p));
+
       p.tX = 0;
-      p.stateX = dm.fStandX;
+      p.stateY = dm.fStandY;
+      p.y = by;
     }
   };
 
@@ -35,7 +45,9 @@ export default function Player(play, ctx) {
   let pChange;
 
 
-  this.init = () => {
+  this.init = (x, y, arg) => {
+    p.x = x;
+    p.y = y;
   };
 
   this.update = () => {
@@ -89,9 +101,10 @@ export default function Player(play, ctx) {
       p.jGrace--;
     }
 
-    mover.clampX(p);
     mover.moveX(p);
     mover.moveY(p);
+
+    mover.checkEdgeX(p);
 
     p.stateX(p);
     p.stateY(p);
@@ -101,12 +114,8 @@ export default function Player(play, ctx) {
 
     p.flipx = p.dx < 0 ? true : p.dx == 0 ? p.flipx : false;
 
-
-    cam.x = mu.lerp(cam.x, p.x);
-    cam.y = mu.lerp(cam.y, p.y);
-
-    
-
+    cam.targetX = p.x;
+    cam.targetY = p.y;
   };
 
   const colorMap = [
@@ -119,7 +128,7 @@ export default function Player(play, ctx) {
   this.draw = () => {
     g.fill(colorMap[p.si]);
     g.fr(p.x-p.sw/2,p.y-p.sh/2,p.sw,p.sh);
-
+    
     // g.sspr(p.si * 24,0,24,24,p.x-5,p.y-8,24,24,p.flipx);
   };
   

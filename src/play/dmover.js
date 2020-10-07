@@ -4,8 +4,10 @@ export default function DMover() {
 
   let DecayDX = 1,
       AttackDX = 2,
+      SustainDX = 1.5,
       ReleaseDX = 1,
       DecayDY = 4,
+      StandDY = 3,
       AttackDY = 6,
       ReleaseDY = 6,
       AttackT = 2,
@@ -62,8 +64,8 @@ export default function DMover() {
 
     p.dy = mu.lerp(p.dy, -AttackDY, 1/AttackT);
 
-    p.sw *= 0.9;
-    p.sh *= 1.02;
+    p.sw *= 0.8;
+    p.sh *= 1.04;
 
     p.si = 1 + Math.floor(p.tY / AttackT);
 
@@ -82,7 +84,7 @@ export default function DMover() {
 
     p.tY++;
 
-    p.dy = mu.lerp(p.dy, AttackDY);
+    p.dy = mu.lerp(p.dy, StandDY);
 
     p.si = 0;
 
@@ -95,9 +97,11 @@ export default function DMover() {
   function fSustainX(p) {
     p.tX++;
 
+    p.dx = mu.lerp(p.dx, SustainDX * p.inputX);
+
     let reverse = Math.sign(p.inputX) !== Math.sign(p.dx);
 
-    if (p.tX >= SustainT || reverse) {
+    if (reverse) {
       p.tX = 0;
       p.stateX = fStandX;
     }

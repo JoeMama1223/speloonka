@@ -1,14 +1,17 @@
 ### Task List
 
-- [ ] Running
-- [ ] Map Generation
+- [ ] Wall slide
+- [ ] Dash
+- [ ] Run
 - [ ] Edge push back
 
-- [ ] Editor
-  - [ ] Level
-  - [ ] Background
 
 - [ ] Flip animation
+
+~- [ ] Editor~
+  - [ ] Level
+  - [ ] Background
+~- [ ] Map Generation~
 
 ### Mechanics
 

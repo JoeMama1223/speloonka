@@ -3,9 +3,9 @@ import * as bs from './bounds';
 
 export default function Mover(play) {
 
-  let section = play.section;
+  let map = play.map;
 
-  const absCbox = p => {
+  const absCbox = this.absCbox = p => {
     let cbox = p.cbox;
     return [
       p.x + cbox[0],
@@ -16,21 +16,34 @@ export default function Mover(play) {
 
   const isSolid = this.isSolid = (p, ox, oy) => {
     let cbox = absCbox(p);
-    return section
+    return map()
       .solidAt(cbox[0] + ox,
                cbox[1] + oy,
                cbox[2],
                cbox[3]);
   };
 
-  this.clampX = (p) => {
-    if (p.x < 0) {
-      p.onEdgeX(p);
-      p.x = 0;
+  this.checkEdgeY = (p) => {
+    let { minY, maxY } = map().targetRoom;
+    let cbox = absCbox(p);
+
+    if (cbox[1] < minY) {
+      p.onEdgeY(p, minY - p.cbox[1]);
     }
-    if (p.x > bs.pxWorldSizeX) {
-      p.onEdgeX(p);
-      p.x = bs.pxWorldSizeX;
+    if (cbox[1]+cbox[3] > maxY) {
+      p.onEdgeY(p, maxY - p.cbox[1] - p.cbox[3]);
+    }
+  };
+
+  this.checkEdgeX = (p) => {
+    let { minX, maxX } = map().targetRoom;
+    let cbox = absCbox(p);
+
+    if (cbox[0] < minX) {
+      p.onEdgeX(p, minX - p.cbox[0]);
+    }
+    if (cbox[0] + cbox[2] > maxX) {
+      p.onEdgeX(p, maxX - p.cbox[0] - p.cbox[2]);
     }
   };
 
